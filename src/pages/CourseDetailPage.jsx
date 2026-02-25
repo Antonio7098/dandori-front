@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -33,6 +33,31 @@ export default function CourseDetailPage() {
   
   const { isCourseSaved, saveCourse, unsaveCourse, isAuthenticated } = useUserStore();
   const isSaved = isCourseSaved(id);
+
+  const normalizeList = (value, delimiter = ',') => {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => (typeof item === 'string' ? item.trim() : ''))
+        .filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value
+        .split(delimiter)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+
+  const learningObjectives = useMemo(
+    () => normalizeList(course?.learning_objectives, '\n'),
+    [course?.learning_objectives]
+  );
+  const skills = useMemo(() => normalizeList(course?.skills, ','), [course?.skills]);
+  const providedMaterials = useMemo(
+    () => normalizeList(course?.provided_materials, '\n'),
+    [course?.provided_materials]
+  );
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -105,9 +130,6 @@ export default function CourseDetailPage() {
       </PageLayout>
     );
   }
-
-  const learningObjectives = course.learning_objectives?.split('\n').filter(Boolean) || [];
-  const skills = course.skills?.split(',').map(s => s.trim()).filter(Boolean) || [];
 
   return (
     <PageLayout>
@@ -200,10 +222,16 @@ export default function CourseDetailPage() {
               </section>
             )}
 
-            {course.provided_materials && (
+            {providedMaterials.length > 0 && (
               <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>Materials Provided</h2>
-                <p className={styles.materials}>{course.provided_materials}</p>
+                <ul className={styles.objectivesList}>
+                  {providedMaterials.map((material, index) => (
+                    <li key={index} className={styles.materialItem}>
+                      {material}
+                    </li>
+                  ))}
+                </ul>
               </section>
             )}
 
@@ -255,7 +283,7 @@ export default function CourseDetailPage() {
               <div className={styles.price}>
                 <span className={styles.priceLabel}>Course Fee</span>
                 <span className={styles.priceValue}>
-                  {course.cost ? `£${course.cost}` : 'Free'}
+                  {course.cost ? `${course.cost}` : 'Free'}
                 </span>
               </div>
 
