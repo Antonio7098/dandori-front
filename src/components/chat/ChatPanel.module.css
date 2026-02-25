@@ -202,6 +202,100 @@
   gap: var(--space-4);
 }
 
+.toolEventsPanel {
+  margin-top: var(--space-4);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+}
+
+.toolEventsHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.toolEventsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.toolEvent {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  background: var(--bg-card);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.toolEventHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.toolEventIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.toolEventTitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.toolEventStatus {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-tertiary);
+}
+
+.toolEventPayload {
+  margin: 0;
+  padding: var(--space-2);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.toolEventError {
+  margin: var(--space-2) 0 0;
+  color: var(--color-terracotta-600);
+}
+
+.toolEvent.completed {
+  border-color: var(--color-forest-200);
+}
+
+.toolEvent.running {
+  border-color: var(--color-honey-200);
+}
+
+.toolEvent.error {
+  border-color: var(--color-terracotta-300);
+}
+
 .message {
   display: flex;
   gap: var(--space-3);
@@ -232,19 +326,27 @@
   border-radius: var(--radius-md);
 }
 
+
+.messageBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .messageBubble {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-xl);
   position: relative;
+  background: var(--bg-secondary);
 }
 
-.user .messageBubble {
+.messageBubble.user {
   background: linear-gradient(135deg, var(--color-forest-500) 0%, var(--color-forest-600) 100%);
   color: var(--color-cream-50);
   border-bottom-right-radius: var(--radius-sm);
 }
 
-.assistant .messageBubble {
+.messageBubble.assistant {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border-bottom-left-radius: var(--radius-sm);

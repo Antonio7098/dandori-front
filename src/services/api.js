@@ -82,49 +82,79 @@ export const authApi = {
 };
 
 export const chatApi = {
-  sendMessage: async (message, history = []) => {
+  sendMessage: async ({
+    message,
+    history = [],
+    mode = 'standard',
+    filters = {},
+    stream = false,
+  }) => {
     return fetchWithAuth('/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, mode, filters, stream }),
     });
   },
-  
-  streamMessage: async function* (message, history = []) {
+
+  streamChat: async function* ({
+    message,
+    history = [],
+    mode = 'standard',
+    filters = {},
+  }) {
     const token = localStorage.getItem('dandori-token');
-    
-    const response = await fetch(`${API_BASE}/api/chat/stream`, {
+
+    const response = await fetch(`${API_BASE}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, mode, filters, stream: true }),
     });
-    
-    if (!response.ok) {
+
+    if (!response.ok || !response.body) {
       throw new Error(`HTTP ${response.status}`);
     }
-    
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    
+    let buffer = '';
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
-      
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') return;
-          try {
-            yield JSON.parse(data);
-          } catch {
-            yield { content: data };
+
+      buffer += decoder.decode(value, { stream: true });
+
+      let separatorIndex;
+      while ((separatorIndex = buffer.indexOf('\n\n')) !== -1) {
+        const rawEvent = buffer.slice(0, separatorIndex);
+        buffer = buffer.slice(separatorIndex + 2);
+
+        const lines = rawEvent.split('\n');
+        let eventName = null;
+        let dataPayload = '';
+
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            eventName = line.slice(6).trim();
+          } else if (line.startsWith('data:')) {
+            dataPayload += line.slice(5).trim();
           }
         }
+
+        if (!eventName || !dataPayload) {
+          continue;
+        }
+
+        let parsed;
+        try {
+          parsed = JSON.parse(dataPayload);
+        } catch {
+          parsed = dataPayload;
+        }
+
+        yield { event: eventName, data: parsed };
       }
     }
   },

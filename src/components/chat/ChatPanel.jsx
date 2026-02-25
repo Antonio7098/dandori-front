@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Send, 
-  Maximize2, 
-  Minimize2, 
+import {
+  X,
+  Send,
+  Maximize2,
+  Minimize2,
   Sparkles,
   Bot,
-  User,
-  Loader2
+  Loader2,
+  Hammer,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useChatStore } from '../../stores/useStore';
 import { chatApi } from '../../services/api';
 import { Button, Avatar } from '../ui';
@@ -47,6 +50,42 @@ const messageVariants = {
   },
 };
 
+const formatToolName = (name = '') =>
+  name
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+const extractToolQuery = (event = {}) => {
+  const args = event.arguments || {};
+  const candidates = [args.query, args.value];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  if (args.filters && typeof args.filters === 'object') {
+    const entry = Object.entries(args.filters).find(([, value]) => {
+      if (Array.isArray(value)) {
+        return value.some((item) => item !== undefined && item !== null && item !== '');
+      }
+      return value !== undefined && value !== null && value !== '';
+    });
+
+    if (entry) {
+      const [key, value] = entry;
+      if (Array.isArray(value)) {
+        return `${key}: ${value.filter(Boolean).join(', ')}`;
+      }
+      return `${key}: ${value}`;
+    }
+  }
+
+  return '';
+};
+
 export default function ChatPanel() {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
@@ -58,11 +97,17 @@ export default function ChatPanel() {
     isFullPage, 
     setFullPage,
     messages, 
-    addMessage, 
+    addMessage,
+    updateMessage,
     isLoading, 
     setLoading,
     artifacts,
     addArtifact,
+    clearArtifacts,
+    toolEvents,
+    addToolEvent,
+    updateToolEvent,
+    clearToolEvents,
   } = useChatStore();
 
   useEffect(() => {
@@ -82,24 +127,116 @@ export default function ChatPanel() {
     const userMessage = input.trim();
     setInput('');
     
+    const historyPayload = messages
+      .filter((msg) => ['user', 'assistant', 'system'].includes(msg.role))
+      .slice(-10)
+      .map(({ role, content }) => ({ role, content }));
+
     addMessage({ role: 'user', content: userMessage });
     setLoading(true);
+    clearToolEvents();
+    clearArtifacts();
+
+    const assistantMessage = addMessage({
+      role: 'assistant',
+      content: '',
+      isStreaming: true,
+    });
 
     try {
-      const response = await chatApi.sendMessage(userMessage, messages);
-      
-      addMessage({ role: 'assistant', content: response.message });
-      
-      if (response.artifacts) {
-        response.artifacts.forEach(artifact => {
-          addArtifact(artifact);
+      let finalReceived = false;
+      for await (const { event, data } of chatApi.streamChat({
+        message: userMessage,
+        history: historyPayload,
+      })) {
+        switch (event) {
+          case 'text_delta': {
+            if (!assistantMessage?.id) break;
+            updateMessage(assistantMessage.id, (prev) => ({
+              content: `${prev.content || ''}${data?.delta || ''}`,
+            }));
+            break;
+          }
+          case 'tool_call': {
+            addToolEvent({
+              ...data,
+              status: 'running',
+              messageId: assistantMessage.id,
+            });
+            break;
+          }
+          case 'tool_result': {
+            updateToolEvent(data?.id, {
+              status: data?.result?.error ? 'error' : 'completed',
+              result: data?.result,
+            });
+            break;
+          }
+          case 'error': {
+            updateMessage(assistantMessage.id, {
+              isError: true,
+              isStreaming: false,
+              content:
+                data?.error ||
+                'I ran into an issue while processing that request.',
+            });
+            addToolEvent({
+              id: data?.id || Date.now(),
+              name: data?.name || 'error',
+              status: 'error',
+              error: data?.error,
+              messageId: assistantMessage.id,
+            });
+            finalReceived = true;
+            break;
+          }
+          case 'message_end': {
+            updateMessage(assistantMessage.id, {
+              content: data?.message || messages.find((m) => m.id === assistantMessage.id)?.content || '',
+              isStreaming: false,
+              metadata: {
+                mode: data?.mode,
+                model: data?.model,
+              },
+            });
+
+            if (Array.isArray(data?.artifacts)) {
+              data.artifacts.forEach((artifact) => addArtifact(artifact));
+            }
+
+            finalReceived = true;
+            break;
+          }
+          default:
+            break;
+        }
+
+        if (finalReceived) {
+          break;
+        }
+      }
+
+      if (!finalReceived) {
+        const fallback = await chatApi.sendMessage({
+          message: userMessage,
+          history: historyPayload,
         });
+        updateMessage(assistantMessage.id, {
+          content: fallback.message,
+          isStreaming: false,
+        });
+        if (Array.isArray(fallback?.artifacts)) {
+          fallback.artifacts.forEach((artifact) => addArtifact(artifact));
+        }
       }
     } catch (error) {
-      addMessage({ 
-        role: 'assistant', 
-        content: 'I apologize, but I encountered an issue. Please try again.',
-        isError: true 
+      updateMessage(assistantMessage.id, {
+        role: 'assistant',
+        content:
+          error.message ||
+          'I apologize, but I encountered an issue. Please try again.',
+        isError: true,
+        isStreaming: false,
       });
     } finally {
       setLoading(false);
@@ -214,14 +351,57 @@ export default function ChatPanel() {
                             </div>
                           )}
                         </div>
-                        <div className={`${styles.messageBubble} ${message.isError ? styles.error : ''}`}>
-                          <p className={styles.messageContent}>{message.content}</p>
-                          <span className={styles.messageTime}>
-                            {new Date(message.timestamp).toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </span>
+                        <div className={styles.messageBody}>
+                          {message.role === 'assistant' &&
+                            toolEvents.some((event) => event.messageId === message.id) && (
+                              <div className={styles.toolCallStack}>
+                                {toolEvents
+                                  .filter((event) => event.messageId === message.id)
+                                  .map((event) => {
+                                    const queryText = extractToolQuery(event);
+                                    return (
+                                      <div
+                                        key={event.id}
+                                        className={`${styles.messageBubble} ${styles.toolBubble}`}
+                                      >
+                                        <div className={styles.toolCallIcon}>
+                                          {event.status === 'completed' && <CheckCircle2 size={16} />}
+                                          {event.status === 'error' && <AlertTriangle size={16} />}
+                                          {!event.status || event.status === 'running' ? <Hammer size={16} /> : null}
+                                        </div>
+                                        <div>
+                                          <p className={styles.toolCallName}>{formatToolName(event.name)}</p>
+                                          {queryText && (
+                                            <p className={styles.toolCallQuery}>{queryText}</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            )}
+                          <div className={`${styles.messageBubble} ${message.isError ? styles.error : ''}`}>
+                            <ReactMarkdown
+                              className={styles.markdown}
+                              skipHtml
+                            >
+                              {message.content || ''}
+                            </ReactMarkdown>
+                            {message.metadata?.model && (
+                              <span className={styles.messageMeta}>
+                                {message.metadata.mode && (
+                                  <span>{message.metadata.mode}</span>
+                                )}
+                                <span>{message.metadata.model}</span>
+                              </span>
+                            )}
+                            <span className={styles.messageTime}>
+                              {new Date(message.timestamp || Date.now()).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
                         </div>
                       </motion.div>
                     ))}

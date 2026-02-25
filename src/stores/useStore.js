@@ -40,28 +40,95 @@ export const useChatStore = create((set, get) => ({
   isFullPage: false,
   isLoading: false,
   artifacts: [],
-  
+  toolEvents: [],
+
   toggleChat: () => set((state) => ({ isOpen: !state.isOpen })),
-  
+
   openChat: () => set({ isOpen: true }),
   
   closeChat: () => set({ isOpen: false }),
   
   setFullPage: (isFullPage) => set({ isFullPage }),
   
-  addMessage: (message) => set((state) => ({
-    messages: [...state.messages, { ...message, id: Date.now(), timestamp: new Date() }]
-  })),
-  
+  addMessage: (message) => {
+    let newMessage;
+    set((state) => {
+      newMessage = {
+        ...message,
+        id: message.id || crypto.randomUUID?.() || Date.now(),
+        timestamp: message.timestamp || new Date(),
+      };
+      return {
+        messages: [...state.messages, newMessage],
+      };
+    });
+    return newMessage;
+  },
+
+  updateMessage: (id, updater) =>
+    set((state) => ({
+      messages: state.messages.map((message) => {
+        if (message.id !== id) return message;
+        const updates =
+          typeof updater === 'function' ? updater(message) : updater || {};
+        return { ...message, ...updates };
+      }),
+    })),
+
   setLoading: (isLoading) => set({ isLoading }),
-  
-  addArtifact: (artifact) => set((state) => ({
-    artifacts: [...state.artifacts, { ...artifact, id: Date.now() }]
-  })),
-  
+
+  addArtifact: (artifact) =>
+    set((state) => {
+      const course = artifact.course || artifact;
+      const artifactId =
+        artifact.course_id || course.id || artifact.id || Date.now();
+      if (
+        artifactId &&
+        state.artifacts.some(
+          (existing) =>
+            existing.course_id === artifactId ||
+            existing.id === artifactId ||
+            existing.course?.id === artifactId
+        )
+      ) {
+        return { artifacts: state.artifacts };
+      }
+      return {
+        artifacts: [
+          ...state.artifacts,
+          { ...artifact, course, id: artifactId, course_id: artifactId },
+        ],
+      };
+    }),
+
   clearArtifacts: () => set({ artifacts: [] }),
-  
-  clearMessages: () => set({ messages: [], artifacts: [] }),
+
+  addToolEvent: (event) =>
+    set((state) => ({
+      toolEvents: [
+        ...state.toolEvents,
+        {
+          ...event,
+          toolCallId: event.toolCallId || event.id,
+          id:
+            event.id || event.toolCallId || crypto.randomUUID?.() || Date.now(),
+          timestamp: event.timestamp || new Date().toISOString(),
+        },
+      ],
+    })),
+
+  updateToolEvent: (toolCallId, updates) =>
+    set((state) => ({
+      toolEvents: state.toolEvents.map((event) =>
+        event.toolCallId === toolCallId
+          ? { ...event, ...(typeof updates === 'function' ? updates(event) : updates) }
+          : event
+      ),
+    })),
+
+  clearToolEvents: () => set({ toolEvents: [] }),
+
+  clearMessages: () => set({ messages: [], artifacts: [], toolEvents: [] }),
 }));
 
 export const useSearchStore = create((set) => ({
