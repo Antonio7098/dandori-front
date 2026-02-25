@@ -1,13 +1,13 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext';
 import { 
   HomePage, 
   SearchPage, 
-  CoursesPage, 
   CourseDetailPage, 
   ProfilePage, 
-  LoginPage 
+  LoginPage,
+  SignupPage
 } from './pages';
 import './styles/theme.css';
 
@@ -28,12 +28,12 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
-            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/courses" element={<Navigate to="/search" replace />} />
             <Route path="/courses/:id" element={<CourseDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/saved" element={<ProfilePage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>

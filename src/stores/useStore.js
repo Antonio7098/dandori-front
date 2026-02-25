@@ -9,6 +9,11 @@ export const useUserStore = create(
       savedCourses: [],
       
       setUser: (user) => set({ user, isAuthenticated: !!user }),
+
+      isAdmin: () => {
+        const { user } = get();
+        return Boolean(user?.email && user.email.endsWith('@dandori.com'));
+      },
       
       logout: () => set({ user: null, isAuthenticated: false, savedCourses: [] }),
       

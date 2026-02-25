@@ -47,6 +47,7 @@
   text-transform: capitalize;
 }
 
+
 .badges {
   position: absolute;
   top: var(--space-3);
@@ -56,10 +57,17 @@
   z-index: 2;
 }
 
-.saveButton {
+.actionStack {
   position: absolute;
   top: var(--space-3);
   right: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: 2;
+}
+
+.saveButton {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,7 +79,6 @@
   color: var(--text-tertiary);
   cursor: pointer;
   box-shadow: var(--shadow-md);
-  z-index: 2;
   transition: all var(--transition-fast);
 }
 
@@ -83,6 +90,34 @@
 .saveButton.saved {
   color: var(--color-terracotta-500);
   background: var(--color-terracotta-100);
+}
+
+.adminButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+}
+
+.deleteButton {
+  background: var(--color-terracotta-100);
+  color: var(--color-terracotta-600);
+}
+
+.deleteButton:hover {
+  background: var(--color-terracotta-200);
+  color: var(--color-terracotta-700);
+}
+
+.deleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .content {

@@ -17,6 +17,8 @@ export default function CourseGrid({
   columns = 3,
   emptyMessage = "No courses found",
   isLoading = false,
+  isAdmin = false,
+  onDeleteCourse,
 }) {
   if (isLoading) {
     return (
@@ -63,6 +65,8 @@ export default function CourseGrid({
         <CourseCard 
           key={course.id || course.class_id} 
           course={course} 
+          isAdmin={isAdmin}
+          onDeleteCourse={onDeleteCourse}
         />
       ))}
     </motion.div>

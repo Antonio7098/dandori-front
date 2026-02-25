@@ -387,14 +387,6 @@ export default function ChatPanel() {
                             >
                               {message.content || ''}
                             </ReactMarkdown>
-                            {message.metadata?.model && (
-                              <span className={styles.messageMeta}>
-                                {message.metadata.mode && (
-                                  <span>{message.metadata.mode}</span>
-                                )}
-                                <span>{message.metadata.model}</span>
-                              </span>
-                            )}
                             <span className={styles.messageTime}>
                               {new Date(message.timestamp || Date.now()).toLocaleTimeString([], {
                                 hour: '2-digit',

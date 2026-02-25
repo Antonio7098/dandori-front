@@ -4,3 +4,4 @@ export { default as CoursesPage } from './CoursesPage';
 export { default as CourseDetailPage } from './CourseDetailPage';
 export { default as ProfilePage } from './ProfilePage';
 export { default as LoginPage } from './LoginPage';
+export { default as SignupPage } from './SignupPage';

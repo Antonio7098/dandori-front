@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Clock, PoundSterling, Heart, Star, Users } from 'lucide-react';
+import { MapPin, Clock, PoundSterling, Heart, Trash2, Loader2 } from 'lucide-react';
 import { useUserStore } from '../../stores/useStore';
 import { Card, CardImage, Badge, Rating } from '../ui';
 import styles from './CourseCard.module.css';
 
-export default function CourseCard({ course, variant = 'default' }) {
+export default function CourseCard({ course, variant = 'default', isAdmin = false, onDeleteCourse }) {
   const { isCourseSaved, saveCourse, unsaveCourse, isAuthenticated } = useUserStore();
   const isSaved = isCourseSaved(course.id || course.class_id);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const canDelete = Boolean(isAdmin && onDeleteCourse && course.id);
 
   const handleSaveToggle = (e) => {
     e.preventDefault();
@@ -17,6 +20,21 @@ export default function CourseCard({ course, variant = 'default' }) {
       unsaveCourse(courseId);
     } else {
       saveCourse(courseId);
+    }
+  };
+
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!canDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await onDeleteCourse?.(course);
+    } catch (error) {
+      console.error('Delete failed:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -68,16 +86,33 @@ export default function CourseCard({ course, variant = 'default' }) {
               )}
             </div>
 
-            {isAuthenticated && (
-              <motion.button
-                className={`${styles.saveButton} ${isSaved ? styles.saved : ''}`}
-                onClick={handleSaveToggle}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                aria-label={isSaved ? 'Remove from saved' : 'Save course'}
-              >
-                <Heart size={18} fill={isSaved ? 'currentColor' : 'none'} />
-              </motion.button>
+            {(isAuthenticated || canDelete) && (
+              <div className={styles.actionStack}>
+                {isAuthenticated && (
+                  <motion.button
+                    className={`${styles.saveButton} ${isSaved ? styles.saved : ''}`}
+                    onClick={handleSaveToggle}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    aria-label={isSaved ? 'Remove from saved' : 'Save course'}
+                  >
+                    <Heart size={18} fill={isSaved ? 'currentColor' : 'none'} />
+                  </motion.button>
+                )}
+
+                {canDelete && (
+                  <motion.button
+                    className={`${styles.adminButton} ${styles.deleteButton}`}
+                    onClick={handleDelete}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label="Delete course"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? <Loader2 size={16} className={styles.spinner} /> : <Trash2 size={16} />}
+                  </motion.button>
+                )}
+              </div>
             )}
           </div>
 

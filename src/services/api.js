@@ -25,6 +25,24 @@ async function fetchWithAuth(endpoint, options = {}) {
   return response.json();
 }
 
+async function fetchWithAuthForm(endpoint, formData, method = 'POST') {
+  const token = localStorage.getItem('dandori-token');
+  const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    method,
+    body: formData,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export const coursesApi = {
   getAll: (params = {}) => {
     const searchParams = new URLSearchParams(params);
@@ -46,6 +64,18 @@ export const coursesApi = {
   delete: (id) => fetchWithAuth(`/api/courses/${id}`, {
     method: 'DELETE',
   }),
+
+  uploadPdf: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return fetchWithAuthForm('/api/upload', formData, 'POST');
+  },
+
+  uploadBatch: (files = []) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    return fetchWithAuthForm('/api/upload/batch', formData, 'POST');
+  },
   
   search: (query, filters = {}) => {
     const params = new URLSearchParams({ q: query, ...filters });
