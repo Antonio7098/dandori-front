@@ -17,6 +17,53 @@
   margin-bottom: var(--space-8);
 }
 
+.actionsStack {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.viewToggle {
+  display: flex;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+}
+
+.viewButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.viewButton:hover {
+  color: var(--text-primary);
+}
+
+.viewButton.active {
+  background: var(--bg-card);
+  color: var(--color-forest-600);
+  box-shadow: var(--shadow-sm);
+}
+
+.adminBanner {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px dashed var(--border-medium);
+  color: var(--text-secondary);
+}
+
 /* Empty state */
 .emptyState {
   display: flex;
@@ -91,4 +138,54 @@
   background: var(--color-forest-100);
   border-color: var(--color-forest-300);
   color: var(--color-forest-700);
+}
+
+.uploadForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.uploadModeToggle {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.uploadField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.uploadLabel {
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.selectedHint {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.uploadSuccess,
+.uploadError {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  white-space: pre-line;
+}
+
+.uploadSuccess {
+  background: var(--color-sage-100);
+  color: var(--color-forest-700);
+}
+
+.uploadError {
+  background: var(--color-terracotta-100);
+  color: var(--color-terracotta-700);
 }

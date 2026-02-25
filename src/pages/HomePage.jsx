@@ -168,7 +168,7 @@ export default function HomePage() {
             title="Discover Your Next Adventure"
             description="Handpicked courses to ignite your curiosity and nurture your wellbeing"
             actions={
-              <Button as={Link} to="/courses" variant="outline" icon={<ArrowRight size={18} />} iconPosition="right">
+              <Button as={Link} to="/search" variant="outline" icon={<ArrowRight size={18} />} iconPosition="right">
                 View All Courses
               </Button>
             }
@@ -228,7 +228,7 @@ export default function HomePage() {
             <div className={styles.footerLinks}>
               <div className={styles.footerColumn}>
                 <h4>Explore</h4>
-                <Link to="/courses">All Courses</Link>
+                <Link to="/search">All Courses</Link>
                 <Link to="/search">Discover</Link>
                 <Link to="/instructors">Instructors</Link>
               </div>
