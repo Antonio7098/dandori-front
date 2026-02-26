@@ -15,7 +15,12 @@ export default function ChatPage() {
   return (
     <PageLayout fullWidth fullHeight className={styles.pageLayout}>
       <div className={styles.chatViewport}>
-        <ChatExperience variant="page" showFrameControls={false} isFullPageMode />
+        <ChatExperience
+          variant="page"
+          showFrameControls={false}
+          isFullPageMode
+          showToolEvents
+        />
       </div>
     </PageLayout>
   );
