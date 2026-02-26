@@ -52,6 +52,7 @@ export default function ChatPanel() {
               isFullPageMode={isFullPage}
               onToggleFullPage={() => setFullPage(!isFullPage)}
               onClose={closeChat}
+              showToolEvents
             />
           </motion.div>
         </>
