@@ -17,6 +17,18 @@ async function fetchWithAuth(endpoint, options = {}) {
     headers,
   });
   
+  if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/signup')) {
+    localStorage.removeItem('dandori-token');
+    const storeData = JSON.parse(localStorage.getItem('dandori-user-storage') || '{}');
+    if (storeData?.state) {
+      storeData.state.user = null;
+      storeData.state.isAuthenticated = false;
+      localStorage.setItem('dandori-user-storage', JSON.stringify(storeData));
+    }
+    const error = await response.json().catch(() => ({ error: 'Session expired' }));
+    throw new Error(error.error || 'Session expired. Please log in again.');
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Unknown error' }));
     throw new Error(error.error || `HTTP ${response.status}`);
@@ -109,6 +121,10 @@ export const authApi = {
     method: 'PUT',
     body: JSON.stringify(data),
   }),
+
+  getReviewCount: () => fetchWithAuth('/api/auth/review-count'),
+
+  getUserReviews: () => fetchWithAuth('/api/auth/reviews'),
 };
 
 export const chatApi = {

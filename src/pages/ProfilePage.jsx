@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { PageLayout, PageHeader, PageSection } from '../components/layout';
 import { CourseGrid } from '../components/courses';
-import { Button, Card, CardContent, Avatar, Input, Badge } from '../components/ui';
+import { Button, Card, CardContent, Avatar, Input, Badge, Rating } from '../components/ui';
 import { useUserStore } from '../stores/useStore';
 import { authApi, coursesApi } from '../services/api';
 import styles from './ProfilePage.module.css';
@@ -33,6 +33,8 @@ export default function ProfilePage() {
     bio: '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [userReviews, setUserReviews] = useState([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -53,6 +55,8 @@ export default function ProfilePage() {
 
     fetchProfile();
     fetchSavedCourses();
+    fetchReviewCount();
+    fetchUserReviews();
   }, [isAuthenticated, navigate, setUser]);
 
   useEffect(() => {
@@ -82,12 +86,34 @@ export default function ProfilePage() {
     }
   };
 
+  const fetchReviewCount = async () => {
+    try {
+      const data = await authApi.getReviewCount();
+      setReviewCount(data?.count || 0);
+    } catch (error) {
+      console.error('Failed to fetch review count:', error);
+    }
+  };
+
+  const fetchUserReviews = async () => {
+    try {
+      const data = await authApi.getUserReviews();
+      setUserReviews(data?.reviews || []);
+    } catch (error) {
+      console.error('Failed to fetch user reviews:', error);
+    }
+  };
+
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
       const updated = await authApi.updateProfile(editForm);
-      setUser({ ...user, ...updated });
-      setIsEditing(false);
+      if (updated && !updated.error) {
+        setUser({ ...user, ...updated });
+        setIsEditing(false);
+      } else {
+        console.error('Profile update returned error:', updated?.error);
+      }
     } catch (error) {
       console.error('Failed to update profile:', error);
     } finally {
@@ -206,7 +232,7 @@ export default function ProfilePage() {
                       <span className={styles.statLabel}>Completed</span>
                     </div>
                     <div className={styles.stat}>
-                      <span className={styles.statValue}>0</span>
+                      <span className={styles.statValue}>{reviewCount}</span>
                       <span className={styles.statLabel}>Reviews</span>
                     </div>
                   </div>
@@ -322,14 +348,51 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
               
-              <Card variant="outlined" padding="md" className={`${styles.achievementCard} ${styles.locked}`}>
+              <Card
+                variant={reviewCount > 0 ? 'glass' : 'outlined'}
+                padding="md"
+                className={`${styles.achievementCard} ${reviewCount === 0 ? styles.locked : ''}`}
+              >
                 <CardContent>
                   <div className={styles.achievementIcon}>⭐</div>
                   <h4 className={styles.achievementTitle}>Reviewer</h4>
-                  <p className={styles.achievementDesc}>Write your first review</p>
-                  <Badge variant="default" size="sm">Locked</Badge>
+                  <p className={styles.achievementDesc}>
+                    {reviewCount > 0 ? `You have written ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : 'Write your first review'}
+                  </p>
+                  <Badge variant={reviewCount > 0 ? 'success' : 'default'} size="sm">
+                    {reviewCount > 0 ? 'Earned' : 'Locked'}
+                  </Badge>
                 </CardContent>
               </Card>
+            </div>
+
+            <div className={styles.reviewSubsection}>
+              <div className={styles.reviewSubsectionHeader}>
+                <h4>My Reviews</h4>
+                {reviewCount > 0 && <Badge variant="secondary">{reviewCount}</Badge>}
+              </div>
+              {userReviews.length > 0 ? (
+                <div className={styles.userReviewsList}>
+                  {userReviews.map((review) => (
+                    <Card key={review.id} variant="outlined" padding="md" className={styles.userReviewCard}>
+                      <CardContent>
+                        <div className={styles.userReviewHeader}>
+                          <div>
+                            <p className={styles.userReviewCourse}>{review.course_title || `Course #${review.course_id}`}</p>
+                            <p className={styles.userReviewDate}>
+                              {review.created_at ? new Date(review.created_at).toLocaleDateString() : 'Recently'}
+                            </p>
+                          </div>
+                          <Rating value={review.rating} size="sm" readonly />
+                        </div>
+                        <p className={styles.userReviewText}>{review.review}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.userReviewEmpty}>You haven’t shared any reviews yet.</p>
+              )}
             </div>
           </PageSection>
         </main>

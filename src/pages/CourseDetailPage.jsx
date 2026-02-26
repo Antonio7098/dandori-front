@@ -13,7 +13,8 @@ import {
   CheckCircle,
   ChevronLeft,
   Star,
-  MessageCircle
+  MessageCircle,
+  Edit3
 } from 'lucide-react';
 import { PageLayout } from '../components/layout';
 import { Button, Badge, Rating, Card, CardContent, Avatar, Modal, ModalFooter, Input } from '../components/ui';
@@ -31,7 +32,7 @@ export default function CourseDetailPage() {
   const [reviewText, setReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { isCourseSaved, saveCourse, unsaveCourse, isAuthenticated } = useUserStore();
+  const { isCourseSaved, saveCourse, unsaveCourse, isAuthenticated, user } = useUserStore();
   const isSaved = isCourseSaved(id);
 
   const normalizeList = (value, delimiter = ',') => {
@@ -99,11 +100,27 @@ export default function CourseDetailPage() {
       setShowReviewModal(false);
       setReviewRating(0);
       setReviewText('');
+      // noop
     } catch (error) {
       console.error('Failed to submit review:', error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const currentUserReview = reviews.find(
+    (review) => review.user_id === user?.sub || review.user_id === user?.id || review.user_id === user?.email
+  );
+
+  const openReviewModal = (reviewToEdit) => {
+    if (reviewToEdit) {
+      setReviewRating(reviewToEdit.rating);
+      setReviewText(reviewToEdit.review);
+    } else {
+      setReviewRating(0);
+      setReviewText('');
+    }
+    setShowReviewModal(true);
   };
 
   if (isLoading) {

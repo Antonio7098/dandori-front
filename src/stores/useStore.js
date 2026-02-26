@@ -21,7 +21,10 @@ export const useUserStore = create(
         return Boolean(user?.email && user.email.endsWith('@dandori.com'));
       },
       
-      logout: () => set({ user: null, isAuthenticated: false, savedCourses: [] }),
+      logout: () => {
+        localStorage.removeItem('dandori-token');
+        set({ user: null, isAuthenticated: false, savedCourses: [] });
+      },
       
       saveCourse: (courseId) => {
         const { savedCourses } = get();
