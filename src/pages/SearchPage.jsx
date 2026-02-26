@@ -10,6 +10,86 @@ import { useSearchStore, useChatStore, useUserStore } from '../stores/useStore';
 import { coursesApi } from '../services/api';
 import styles from './SearchPage.module.css';
 
+const DEFAULT_PRICE_RANGE = [0, 500];
+
+const parseCostValue = (cost) => {
+  if (typeof cost === 'number' && Number.isFinite(cost)) {
+    return cost;
+  }
+
+  if (!cost) {
+    return null;
+  }
+
+  const numeric = String(cost).replace(/[^0-9.]/g, '');
+  const parsed = parseFloat(numeric);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const getCourseTimestamp = (course) => {
+  const dateValue = course?.updated_at || course?.created_at;
+  if (!dateValue) {
+    return 0;
+  }
+  const date = new Date(dateValue);
+  return Number.isFinite(date.getTime()) ? date.getTime() : 0;
+};
+
+const applyFiltersAndSorting = (courseList, filters = {}) => {
+  if (!Array.isArray(courseList)) {
+    return [];
+  }
+
+  const locationFilter = filters.location?.toLowerCase().trim();
+  const courseTypeFilter = filters.courseType?.toLowerCase().trim();
+  const priceRange = Array.isArray(filters.priceRange) ? filters.priceRange : DEFAULT_PRICE_RANGE;
+  const [minPrice = DEFAULT_PRICE_RANGE[0], maxPrice = DEFAULT_PRICE_RANGE[1]] = priceRange;
+  const hasPriceFilter = minPrice > DEFAULT_PRICE_RANGE[0] || maxPrice < DEFAULT_PRICE_RANGE[1];
+
+  const filtered = courseList.filter((course) => {
+    const courseLocation = course.location?.toLowerCase() || '';
+    const courseType = course.course_type?.toLowerCase() || '';
+    const costValue = parseCostValue(course.cost);
+
+    const matchesLocation = !locationFilter || courseLocation.includes(locationFilter);
+    const matchesCourseType = !courseTypeFilter || courseType.includes(courseTypeFilter);
+    const matchesPrice = !hasPriceFilter || (costValue !== null && costValue >= minPrice && costValue <= maxPrice);
+
+    return matchesLocation && matchesCourseType && matchesPrice;
+  });
+
+  const sortBy = filters.sortBy || 'relevance';
+  if (sortBy === 'price_low') {
+    return [...filtered].sort((a, b) => {
+      const costA = parseCostValue(a.cost);
+      const costB = parseCostValue(b.cost);
+      return (costA ?? Number.POSITIVE_INFINITY) - (costB ?? Number.POSITIVE_INFINITY);
+    });
+  }
+
+  if (sortBy === 'price_high') {
+    return [...filtered].sort((a, b) => {
+      const costA = parseCostValue(a.cost);
+      const costB = parseCostValue(b.cost);
+      return (costB ?? Number.NEGATIVE_INFINITY) - (costA ?? Number.NEGATIVE_INFINITY);
+    });
+  }
+
+  if (sortBy === 'rating') {
+    return [...filtered].sort((a, b) => {
+      const ratingA = Number.parseFloat(a.rating ?? 0) || 0;
+      const ratingB = Number.parseFloat(b.rating ?? 0) || 0;
+      return ratingB - ratingA;
+    });
+  }
+
+  if (sortBy === 'newest') {
+    return [...filtered].sort((a, b) => getCourseTimestamp(b) - getCourseTimestamp(a));
+  }
+
+  return filtered;
+};
+
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [courses, setCourses] = useState([]);
@@ -27,22 +107,49 @@ export default function SearchPage() {
   const user = useUserStore((state) => state.user);
   const isAdmin = Boolean(user?.email?.endsWith('@dandori.com'));
 
+  const mergeFilters = useCallback(
+    (overrides = {}) => ({
+      ...filters,
+      ...overrides,
+    }),
+    [filters]
+  );
+
+  const buildQueryParams = useCallback((activeFilters) => {
+    const params = {};
+    if (activeFilters.location) {
+      params.location = activeFilters.location;
+    }
+    if (activeFilters.courseType) {
+      params.course_type = activeFilters.courseType;
+    }
+    if (Array.isArray(activeFilters.priceRange)) {
+      const [minPrice, maxPrice] = activeFilters.priceRange;
+      if (typeof minPrice === 'number' && minPrice > DEFAULT_PRICE_RANGE[0]) {
+        params.min_price = minPrice;
+      }
+      if (typeof maxPrice === 'number' && maxPrice < DEFAULT_PRICE_RANGE[1]) {
+        params.max_price = maxPrice;
+      }
+    }
+    if (activeFilters.sortBy && activeFilters.sortBy !== 'relevance') {
+      params.sort_by = activeFilters.sortBy;
+    }
+    return params;
+  }, []);
+
   const fetchCourses = useCallback(async (filterOverrides = {}) => {
     setIsLoading(true);
     try {
-      const params = {
-        location: filterOverrides.location,
-        course_type: filterOverrides.courseType,
-        min_price: filterOverrides.priceRange?.[0],
-        max_price: filterOverrides.priceRange?.[1],
-        sort_by: filterOverrides.sortBy,
-      };
+      const activeFilters = mergeFilters(filterOverrides);
+      const params = buildQueryParams(activeFilters);
 
       const data = await coursesApi.getAll(params);
       const list = data.courses || data || [];
-      setCourses(list);
+      const refined = applyFiltersAndSorting(list, activeFilters);
+      setCourses(refined);
       if (!hasSearched) {
-        setResults(list);
+        setResults(refined);
       }
     } catch (error) {
       console.error('Failed to fetch courses:', error);
@@ -50,7 +157,7 @@ export default function SearchPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [hasSearched, setResults]);
+  }, [buildQueryParams, hasSearched, mergeFilters, setResults]);
 
   const handleSearch = useCallback(async (searchQuery, { silent = false } = {}) => {
     if (!searchQuery?.trim()) return;
@@ -62,18 +169,17 @@ export default function SearchPage() {
     }
 
     try {
+      const activeFilters = mergeFilters();
+      const filterParams = buildQueryParams(activeFilters);
       const response = await coursesApi.search(searchQuery, {
-        location: filters.location,
-        course_type: filters.courseType,
-        min_price: filters.priceRange?.[0],
-        max_price: filters.priceRange?.[1],
-        sort_by: filters.sortBy,
+        ...filterParams,
         n: 30,
       });
 
       const results = response.results || [];
-      setCourses(results);
-      setResults(results);
+      const refined = applyFiltersAndSorting(results, activeFilters);
+      setCourses(refined);
+      setResults(refined);
 
       if (!silent) {
         setSearchParams({ q: searchQuery });
@@ -85,7 +191,7 @@ export default function SearchPage() {
       setIsLoading(false);
       setSearching(false);
     }
-  }, [filters, setResults, setSearchParams, setSearching]);
+  }, [buildQueryParams, mergeFilters, setResults, setSearchParams, setSearching]);
 
   useEffect(() => {
     const urlQuery = searchParams.get('q');
