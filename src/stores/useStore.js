@@ -10,6 +10,12 @@ export const useUserStore = create(
       
       setUser: (user) => set({ user, isAuthenticated: !!user }),
 
+      updateUserProfile: (updates) =>
+        set((state) => {
+          const nextUser = { ...(state.user || {}), ...updates };
+          return { user: nextUser, isAuthenticated: !!nextUser };
+        }),
+
       isAdmin: () => {
         const { user } = get();
         return Boolean(user?.email && user.email.endsWith('@dandori.com'));

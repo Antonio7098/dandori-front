@@ -25,6 +25,7 @@ export default function PageLayout({
   children, 
   showSidebar = true,
   fullWidth = false,
+  fullHeight = false,
   className = '',
 }) {
   const { sidebarOpen } = useUIStore();
@@ -41,7 +42,7 @@ export default function PageLayout({
         }}
       >
         <motion.main
-          className={`${styles.main} ${fullWidth ? styles.fullWidth : ''} ${className}`}
+          className={`${styles.main} ${fullWidth ? styles.fullWidth : ''} ${fullHeight ? styles.fullHeight : ''} ${className}`}
           variants={pageVariants}
           initial="initial"
           animate="animate"

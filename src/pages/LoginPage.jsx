@@ -24,7 +24,7 @@ export default function LoginPage() {
       const response = await authApi.login(email, password);
       localStorage.setItem('dandori-token', response.token);
       setUser(response.user);
-      navigate('/');
+      navigate('/discover');
     } catch (err) {
       setError(err.message || 'Invalid email or password');
     } finally {

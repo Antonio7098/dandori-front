@@ -1,10 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Home, 
   Search, 
-  BookOpen, 
-  Heart, 
   MessageCircle,
   User, 
   Settings, 
@@ -17,8 +14,6 @@ import styles from './Sidebar.module.css';
 
 const mainNavItems = [
   { path: '/search', icon: Search, label: 'Discover' },
-  { path: '/courses', icon: BookOpen, label: 'All Courses' },
-  { path: '/saved', icon: Heart, label: 'Saved Courses' },
   { path: '/chat', icon: MessageCircle, label: 'Chat Assistant' },
 ];
 

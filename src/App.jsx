@@ -10,6 +10,7 @@ import {
   SignupPage,
   ChatPage,
   VisualElementsPage,
+  SettingsPage,
 } from './pages';
 import './styles/theme.css';
 
@@ -31,11 +32,13 @@ function App() {
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/discover" element={<SearchPage />} />
             <Route path="/courses" element={<Navigate to="/search" replace />} />
             <Route path="/courses/:id" element={<CourseDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/saved" element={<ProfilePage />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/visual-elements" element={<VisualElementsPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />

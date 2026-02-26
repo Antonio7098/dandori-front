@@ -30,6 +30,7 @@ export default function ProfilePage() {
     name: '',
     email: '',
     location: '',
+    bio: '',
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -39,14 +40,29 @@ export default function ProfilePage() {
       return;
     }
 
+    const fetchProfile = async () => {
+      try {
+        const response = await authApi.getProfile();
+        if (response?.user) {
+          setUser(response.user);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+
+    fetchProfile();
+    fetchSavedCourses();
+  }, [isAuthenticated, navigate, setUser]);
+
+  useEffect(() => {
     setEditForm({
       name: user?.name || '',
       email: user?.email || '',
       location: user?.location || '',
+      bio: user?.bio || '',
     });
-
-    fetchSavedCourses();
-  }, [isAuthenticated, navigate, user]);
+  }, [user]);
 
   const fetchSavedCourses = async () => {
     setIsLoading(true);
@@ -127,6 +143,17 @@ export default function ProfilePage() {
                     onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
                     icon={<MapPin size={16} />}
                   />
+                  <label className={styles.bioLabel} htmlFor="bio">
+                    Bio
+                  </label>
+                  <textarea
+                    id="bio"
+                    className={styles.bioInput}
+                    value={editForm.bio}
+                    onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                    maxLength={280}
+                    placeholder="Share a little about your playful rituals, weekend wishes, or learning vibe."
+                  />
                   
                   <div className={styles.editActions}>
                     <Button 
@@ -182,6 +209,15 @@ export default function ProfilePage() {
                       <span className={styles.statValue}>0</span>
                       <span className={styles.statLabel}>Reviews</span>
                     </div>
+                  </div>
+
+                  <div className={styles.bioCard}>
+                    <h3>About you</h3>
+                    <p>
+                      {user?.bio?.trim()
+                        ? user.bio
+                        : 'Add a short bio so the Whimsy Wing can tailor every suggestion just for you.'}
+                    </p>
                   </div>
 
                   <div className={styles.profileActions}>

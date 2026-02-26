@@ -84,8 +84,9 @@ export default function SearchBox({
           disabled={!localQuery.trim() || isSearching}
           icon={isSearching ? <Loader2 className={styles.spinner} size={18} /> : <Sparkles size={18} />}
           className={styles.searchButton}
+          aria-label="Vibe Search"
         >
-          {variant === 'hero' ? 'Discover' : 'Search'}
+          Vibe Search
         </Button>
       </div>
 

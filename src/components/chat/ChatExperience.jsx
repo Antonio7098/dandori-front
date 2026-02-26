@@ -15,7 +15,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { useChatStore } from '../../stores/useStore';
+import { useChatStore, useUserStore } from '../../stores/useStore';
 import { chatApi } from '../../services/api';
 import { Button, Avatar } from '../ui';
 import CourseArtifact from './CourseArtifact';
@@ -80,6 +80,7 @@ export default function ChatExperience({
   isFullPageMode = false,
   onToggleFullPage,
   onClose,
+  showToolEvents = false,
 }) {
   const [input, setInput] = useState('');
   const [expandedToolEvents, setExpandedToolEvents] = useState({});
@@ -101,6 +102,7 @@ export default function ChatExperience({
     updateToolEvent,
     clearToolEvents,
   } = useChatStore();
+  const { user } = useUserStore();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -194,9 +196,14 @@ export default function ChatExperience({
 
     try {
       let finalReceived = false;
+      const profileContext = {
+        ...(user?.name ? { name: user.name } : {}),
+        ...(user?.bio ? { bio: user.bio } : {}),
+      };
       for await (const { event, data } of chatApi.streamChat({
         message: userMessage,
         history: historyPayload,
+        profile: profileContext,
       })) {
         switch (event) {
           case 'text_delta': {
@@ -270,6 +277,7 @@ export default function ChatExperience({
         const fallback = await chatApi.sendMessage({
           message: userMessage,
           history: historyPayload,
+          profile: profileContext,
         });
         updateMessage(assistantMessage.id, {
           content: fallback.message,
@@ -296,6 +304,7 @@ export default function ChatExperience({
   const experienceClasses = [
     styles.chatExperience,
     variant === 'page' ? styles.chatExperiencePage : '',
+    variant === 'page' ? styles.chatExperienceFullHeight : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -389,7 +398,8 @@ export default function ChatExperience({
                     )}
                   </div>
                   <div className={styles.messageBody}>
-                    {message.role === 'assistant' &&
+                    {showToolEvents &&
+                      message.role === 'assistant' &&
                       toolEvents.some((event) => event.messageId === message.id) && (
                         <div className={styles.toolCallStack}>
                           {toolEvents

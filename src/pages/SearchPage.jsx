@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Sparkles, Wand2, Grid, List, Upload, Layers } from 'lucide-react';
+import { Grid, List, Upload, Layers } from 'lucide-react';
 import { PageLayout, PageHeader, PageSection } from '../components/layout';
 import { SearchBox, SearchFilters } from '../components/search';
 import { CourseGrid } from '../components/courses';
 import { Button, Modal, ModalFooter } from '../components/ui';
-import { useSearchStore, useChatStore, useUserStore } from '../stores/useStore';
+import { useSearchStore, useUserStore } from '../stores/useStore';
 import { coursesApi } from '../services/api';
 import styles from './SearchPage.module.css';
 
@@ -103,7 +102,6 @@ export default function SearchPage() {
   const [uploadMessage, setUploadMessage] = useState(null);
 
   const { query, setQuery, filters, setSearching, setResults } = useSearchStore();
-  const { openChat } = useChatStore();
   const user = useUserStore((state) => state.user);
   const isAdmin = Boolean(user?.email?.endsWith('@dandori.com'));
 
@@ -212,10 +210,6 @@ export default function SearchPage() {
     }
   };
 
-  const handleVibeSearch = () => {
-    openChat();
-  };
-
   const handleDeleteCourse = async (course) => {
     if (!course?.id) return;
     if (!window.confirm(`Delete course "${course.title}"? This cannot be undone.`)) {
@@ -290,7 +284,6 @@ export default function SearchPage() {
   const sectionDescription = hasSearched
     ? `${courses.length} courses found`
     : `${courses.length} courses available`;
-  const showEmptyDiscover = !hasSearched && !courses.length && !isLoading;
 
   return (
     <PageLayout>
@@ -339,19 +332,6 @@ export default function SearchPage() {
           placeholder="What would bring you joy today?"
           autoFocus
         />
-        
-        <div className={styles.vibeSearchPrompt}>
-          <span>Or try our</span>
-          <Button 
-            variant="whimsical" 
-            size="sm" 
-            icon={<Wand2 size={16} />}
-            onClick={handleVibeSearch}
-          >
-            Vibe Search
-          </Button>
-          <span>— describe your mood and let AI find the perfect match</span>
-        </div>
       </div>
 
       <div className={styles.filtersSection}>
@@ -382,61 +362,19 @@ export default function SearchPage() {
         </PageSection>
       )}
 
-      {showEmptyDiscover ? (
-        <div className={styles.emptyState}>
-          <motion.div 
-            className={styles.emptyIcon}
-            animate={{ 
-              y: [0, -10, 0],
-              rotate: [0, 5, -5, 0],
-            }}
-            transition={{ 
-              duration: 4, 
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          >
-            <Sparkles size={60} />
-          </motion.div>
-          <h2 className={styles.emptyTitle}>Begin Your Discovery</h2>
-          <p className={styles.emptyText}>
-            Search for courses by topic, location, or simply describe what you're looking for. 
-            Our AI-powered search understands your intent and finds the perfect match.
-          </p>
-          
-          <div className={styles.suggestions}>
-            <p className={styles.suggestionsLabel}>Popular searches:</p>
-            <div className={styles.suggestionChips}>
-              {['Pottery in London', 'Weekend cooking classes', 'Relaxing crafts', 'Creative writing'].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  className={styles.suggestionChip}
-                  onClick={() => {
-                    setQuery(suggestion);
-                    handleSearch(suggestion);
-                  }}
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <PageSection
-          title={sectionTitle}
-          description={sectionDescription}
-        >
-          <CourseGrid 
-            courses={courses} 
-            columns={viewMode === 'grid' ? 3 : 1} 
-            isLoading={isLoading}
-            emptyMessage="No courses match your search. Try different keywords or use Vibe Search!"
-            isAdmin={isAdmin}
-            onDeleteCourse={handleDeleteCourse}
-          />
-        </PageSection>
-      )}
+      <PageSection
+        title={sectionTitle}
+        description={sectionDescription}
+      >
+        <CourseGrid 
+          courses={courses} 
+          columns={viewMode === 'grid' ? 3 : 1} 
+          isLoading={isLoading}
+          emptyMessage="No courses match your search. Try different keywords or use Vibe Search!"
+          isAdmin={isAdmin}
+          onDeleteCourse={handleDeleteCourse}
+        />
+      </PageSection>
 
       <Modal
         isOpen={isUploadModalOpen}

@@ -31,6 +31,21 @@
   overflow: hidden;
 }
 
+.chatExperienceFullHeight {
+  height: 100%;
+  min-height: 0;
+}
+
+.chatExperienceFullHeight .content {
+  flex: 1;
+  min-height: 0;
+}
+
+.chatExperienceFullHeight .messagesContainer {
+  height: 100%;
+  min-height: 0;
+}
+
 .panel {
   position: fixed;
   top: 0;
