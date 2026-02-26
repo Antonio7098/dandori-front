@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -11,6 +12,7 @@ import {
   Hammer,
   CheckCircle2,
   AlertTriangle,
+  ChevronDown,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useChatStore } from '../../stores/useStore';
@@ -88,6 +90,7 @@ const extractToolQuery = (event = {}) => {
 
 export default function ChatPanel() {
   const [input, setInput] = useState('');
+  const [expandedToolEvents, setExpandedToolEvents] = useState({});
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   
@@ -119,6 +122,62 @@ export default function ChatPanel() {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  const toggleToolEvent = (eventId) => {
+    if (!eventId) return;
+    setExpandedToolEvents((prev) => ({
+      ...prev,
+      [eventId]: !prev[eventId],
+    }));
+  };
+
+  const normalizeCourses = (event = {}) => {
+    const result = event?.result || {};
+    const sqlCourses = Array.isArray(result.courses)
+      ? result.courses
+      : result.course
+        ? [result.course]
+        : [];
+
+    if (sqlCourses.length > 0) {
+      return sqlCourses
+        .map((course) => {
+          const normalized = course?.course || course;
+          if (!normalized || typeof normalized !== 'object') return null;
+          const courseId = normalized.id || normalized.course_id || normalized.courseId;
+          if (courseId && !normalized.id) {
+            return { ...normalized, id: courseId };
+          }
+          return normalized;
+        })
+        .filter(Boolean);
+    }
+
+    const metadatas = Array.isArray(result.metadatas) ? result.metadatas : [];
+    if (metadatas.length === 0) return [];
+
+    const metadataRows = Array.isArray(metadatas[0]) ? metadatas[0] : metadatas;
+    const ids = result.ids;
+    const idRows = Array.isArray(ids?.[0]) ? ids[0] : ids;
+    const distances = result.distances;
+    const distanceRows = Array.isArray(distances?.[0]) ? distances[0] : distances;
+
+    return metadataRows
+      .map((meta, index) => {
+        if (!meta || typeof meta !== 'object') return null;
+        const courseId = meta.course_id || meta.id || idRows?.[index];
+        return {
+          title: meta.title || meta.class_id || `Match ${index + 1}`,
+          instructor: meta.instructor,
+          location: meta.location,
+          course_id: courseId,
+          id: courseId || `semantic-${event.id || 'event'}-${index}`,
+          _distance: distanceRows?.[index],
+          _source: meta.source,
+        };
+      })
+      .filter(Boolean);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -359,22 +418,74 @@ export default function ChatPanel() {
                                   .filter((event) => event.messageId === message.id)
                                   .map((event) => {
                                     const queryText = extractToolQuery(event);
+                                    const courses = normalizeCourses(event).slice(0, 10);
+                                    const hasCourses = courses.length > 0;
+                                    const isExpanded = !!expandedToolEvents[event.id];
+                                    const bubbleIsInteractive = hasCourses;
                                     return (
                                       <div
                                         key={event.id}
-                                        className={`${styles.messageBubble} ${styles.toolBubble}`}
+                                        className={`${styles.messageBubble} ${styles.toolBubble} ${isExpanded ? styles.toolBubbleExpanded : ''}`}
                                       >
-                                        <div className={styles.toolCallIcon}>
-                                          {event.status === 'completed' && <CheckCircle2 size={16} />}
-                                          {event.status === 'error' && <AlertTriangle size={16} />}
-                                          {!event.status || event.status === 'running' ? <Hammer size={16} /> : null}
-                                        </div>
-                                        <div>
-                                          <p className={styles.toolCallName}>{formatToolName(event.name)}</p>
-                                          {queryText && (
-                                            <p className={styles.toolCallQuery}>{queryText}</p>
+                                        <button
+                                          type="button"
+                                          className={styles.toolBubbleHeader}
+                                          onClick={() => bubbleIsInteractive && toggleToolEvent(event.id)}
+                                          disabled={!bubbleIsInteractive}
+                                          aria-expanded={bubbleIsInteractive ? isExpanded : undefined}
+                                          aria-controls={bubbleIsInteractive ? `tool-results-${event.id}` : undefined}
+                                        >
+                                          <div className={styles.toolCallIcon}>
+                                            {event.status === 'completed' && <CheckCircle2 size={16} />}
+                                            {event.status === 'error' && <AlertTriangle size={16} />}
+                                            {!event.status || event.status === 'running' ? <Hammer size={16} /> : null}
+                                          </div>
+                                          <div className={styles.toolBubbleSummary}>
+                                            <p className={styles.toolCallName}>{formatToolName(event.name)}</p>
+                                            {queryText && (
+                                              <p className={styles.toolCallQuery}>{queryText}</p>
+                                            )}
+                                            {hasCourses && (
+                                              <p className={styles.toolCallMeta}>
+                                                {courses.length} course{courses.length !== 1 ? 's' : ''} found
+                                              </p>
+                                            )}
+                                          </div>
+                                          {bubbleIsInteractive && (
+                                            <ChevronDown
+                                              size={16}
+                                              className={`${styles.toolBubbleChevron} ${isExpanded ? styles.expanded : ''}`}
+                                            />
                                           )}
-                                        </div>
+                                        </button>
+
+                                        {isExpanded && hasCourses && (
+                                          <ul
+                                            className={styles.toolResultsList}
+                                            id={`tool-results-${event.id}`}
+                                          >
+                                            {courses.map((course, courseIndex) => {
+                                              const linkableId = course?.course_id || course?.id;
+                                              const itemKey = linkableId || `${event.id}-${course.id || courseIndex}`;
+                                              const label = course?.title || 'Untitled match';
+                                              return (
+                                                <li key={itemKey} className={styles.toolResultItem}>
+                                                  {linkableId ? (
+                                                    <Link
+                                                      to={`/courses/${linkableId}`}
+                                                      className={styles.toolResultLink}
+                                                      onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                      {label}
+                                                    </Link>
+                                                  ) : (
+                                                    <div className={styles.toolResultStatic}>{label}</div>
+                                                  )}
+                                                </li>
+                                              );
+                                            })}
+                                          </ul>
+                                        )}
                                       </div>
                                     );
                                   })}
