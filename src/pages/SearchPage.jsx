@@ -91,7 +91,7 @@ const applyFiltersAndSorting = (courseList, filters = {}) => {
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [courses, setCourses] = useState([]);
+  const [allCourses, setAllCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
@@ -100,6 +100,10 @@ export default function SearchPage() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState(null);
+  const [displayCount, setDisplayCount] = useState(20);
+
+  const courses = allCourses.slice(0, displayCount);
+  const totalCount = allCourses.length;
 
   const { query, setQuery, filters, setSearching, setResults } = useSearchStore();
   const user = useUserStore((state) => state.user);
@@ -141,17 +145,20 @@ export default function SearchPage() {
     try {
       const activeFilters = mergeFilters(filterOverrides);
       const params = buildQueryParams(activeFilters);
+      params.page = 1;
+      params.limit = 100;
 
       const data = await coursesApi.getAll(params);
       const list = data.courses || data || [];
       const refined = applyFiltersAndSorting(list, activeFilters);
-      setCourses(refined);
+      setAllCourses(refined);
+      setDisplayCount(20);
       if (!hasSearched) {
         setResults(refined);
       }
     } catch (error) {
       console.error('Failed to fetch courses:', error);
-      setCourses([]);
+      setAllCourses([]);
     } finally {
       setIsLoading(false);
     }
@@ -162,6 +169,7 @@ export default function SearchPage() {
 
     setIsLoading(true);
     setSearching(true);
+    setDisplayCount(20);
     if (!silent) {
       setHasSearched(true);
     }
@@ -171,12 +179,12 @@ export default function SearchPage() {
       const filterParams = buildQueryParams(activeFilters);
       const response = await coursesApi.search(searchQuery, {
         ...filterParams,
-        n: 30,
+        n: 100,
       });
 
       const results = response.results || [];
       const refined = applyFiltersAndSorting(results, activeFilters);
-      setCourses(refined);
+      setAllCourses(refined);
       setResults(refined);
 
       if (!silent) {
@@ -184,7 +192,7 @@ export default function SearchPage() {
       }
     } catch (error) {
       console.error('Search failed:', error);
-      setCourses([]);
+      setAllCourses([]);
     } finally {
       setIsLoading(false);
       setSearching(false);
@@ -203,6 +211,7 @@ export default function SearchPage() {
   }, []);
 
   const handleFilterApply = (appliedFilters) => {
+    setDisplayCount(20);
     if (query?.trim()) {
       handleSearch(query);
     } else {
@@ -280,10 +289,12 @@ export default function SearchPage() {
     setUploadMode('single');
   };
 
+  const loadMore = () => {
+    setDisplayCount((prev) => prev + 20);
+  };
+
   const sectionTitle = hasSearched && query ? `Results for "${query}"` : 'All Courses';
-  const sectionDescription = hasSearched
-    ? `${courses.length} courses found`
-    : `${courses.length} courses available`;
+  const viewingText = `Viewing ${Math.min(displayCount, totalCount)} out of ${totalCount}`;
 
   return (
     <PageLayout>
@@ -364,7 +375,7 @@ export default function SearchPage() {
 
       <PageSection
         title={sectionTitle}
-        description={sectionDescription}
+        description={viewingText}
       >
         <CourseGrid 
           courses={courses} 
@@ -374,6 +385,18 @@ export default function SearchPage() {
           isAdmin={isAdmin}
           onDeleteCourse={handleDeleteCourse}
         />
+        
+        {displayCount < totalCount && (
+          <div className={styles.loadMoreWrapper}>
+            <Button
+              variant="outline"
+              onClick={loadMore}
+              isLoading={isLoading}
+            >
+              Load More
+            </Button>
+          </div>
+        )}
       </PageSection>
 
       <Modal

@@ -103,3 +103,9 @@
   background: var(--color-terracotta-100);
   color: var(--color-terracotta-700);
 }
+
+.loadMoreWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-8);
+}
