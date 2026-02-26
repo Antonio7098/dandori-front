@@ -5,21 +5,21 @@ import {
   Search, 
   BookOpen, 
   Heart, 
+  MessageCircle,
   User, 
   Settings, 
   LogOut,
-  ChevronLeft,
-  Sparkles
+  ChevronLeft
 } from 'lucide-react';
 import { useUIStore, useUserStore } from '../../stores/useStore';
 import { Avatar } from '../ui';
 import styles from './Sidebar.module.css';
 
 const mainNavItems = [
-  { path: '/', icon: Home, label: 'Home' },
   { path: '/search', icon: Search, label: 'Discover' },
   { path: '/courses', icon: BookOpen, label: 'All Courses' },
   { path: '/saved', icon: Heart, label: 'Saved Courses' },
+  { path: '/chat', icon: MessageCircle, label: 'Chat Assistant' },
 ];
 
 const bottomNavItems = [
@@ -45,10 +45,7 @@ export default function Sidebar() {
       initial={false}
     >
       <div className={styles.header}>
-        <Link to="/" className={styles.logo}>
-          <div className={styles.logoIcon}>
-            <Sparkles size={24} />
-          </div>
+        <Link to="/search" className={styles.logo}>
           <AnimatePresence>
             {sidebarOpen && (
               <motion.span

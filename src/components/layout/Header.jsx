@@ -1,13 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, Sun, Moon, MessageCircle, User, Search, Sparkles } from 'lucide-react';
+import { Menu, X, Sun, Moon, MessageCircle, User, Search } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useUIStore, useChatStore, useUserStore } from '../../stores/useStore';
 import { Button, Avatar } from '../ui';
 import styles from './Header.module.css';
 
 const navLinks = [
-  { path: '/', label: 'Home' },
   { path: '/search', label: 'Discover' },
   { path: '/about', label: 'About' },
 ];
@@ -22,14 +21,7 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.container}>
-        <Link to="/" className={styles.logo} onClick={closeMobileMenu}>
-          <motion.div 
-            className={styles.logoIcon}
-            whileHover={{ rotate: 15 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-          >
-            <Sparkles size={28} />
-          </motion.div>
+        <Link to="/search" className={styles.logo} onClick={closeMobileMenu}>
           <div className={styles.logoText}>
             <span className={styles.logoTitle}>School of Dandori</span>
             <span className={styles.logoTagline}>Reclaim your joy</span>

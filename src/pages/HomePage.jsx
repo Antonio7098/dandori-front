@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Heart, Users, Calendar, MapPin } from 'lucide-react';
-import { PageLayout, PageSection } from '../components/layout';
+import { PageSection } from '../components/layout';
 import { SearchBox } from '../components/search';
 import { CourseGrid } from '../components/courses';
 import { Button, Card, CardContent } from '../components/ui';
 import { coursesApi } from '../services/api';
+import { useUserStore } from '../stores/useStore';
 import styles from './HomePage.module.css';
 
 const features = [
@@ -47,6 +48,7 @@ const itemVariants = {
 export default function HomePage() {
   const [featuredCourses, setFeaturedCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated } = useUserStore();
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -67,7 +69,19 @@ export default function HomePage() {
   };
 
   return (
-    <PageLayout showSidebar={false} fullWidth>
+    <div className={styles.page}>
+      {/* Top right login button */}
+      <div className={styles.topRightButton}>
+        <Button
+          as={Link}
+          to={isAuthenticated ? '/search' : '/login'}
+          variant="outline"
+          size="sm"
+        >
+          {isAuthenticated ? 'Go to Home' : 'Login'}
+        </Button>
+      </div>
+
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroBackground}>
@@ -119,6 +133,20 @@ export default function HomePage() {
               <span className={styles.statLabel}>Locations</span>
             </div>
           </motion.div>
+
+          {/* Login/Account CTA */}
+          <motion.div className={styles.authCta} variants={itemVariants}>
+            <Button
+              as={Link}
+              to={isAuthenticated ? '/search' : '/login'}
+              variant="whimsical"
+              size="lg"
+              icon={<ArrowRight size={18} />}
+              iconPosition="right"
+            >
+              {isAuthenticated ? 'Get Started' : 'Login'}
+            </Button>
+          </motion.div>
         </motion.div>
 
         {/* Decorative elements */}
@@ -167,11 +195,6 @@ export default function HomePage() {
           <PageSection
             title="Discover Your Next Adventure"
             description="Handpicked courses to ignite your curiosity and nurture your wellbeing"
-            actions={
-              <Button as={Link} to="/search" variant="outline" icon={<ArrowRight size={18} />} iconPosition="right">
-                View All Courses
-              </Button>
-            }
           >
             <CourseGrid 
               courses={featuredCourses} 
@@ -200,11 +223,8 @@ export default function HomePage() {
               Your next adventure awaits.
             </p>
             <div className={styles.ctaActions}>
-              <Button as={Link} to="/search" variant="whimsical" size="lg" icon={<Sparkles size={20} />}>
-                Explore Courses
-              </Button>
-              <Button as={Link} to="/about" variant="secondary" size="lg">
-                Learn More
+              <Button as={Link} to={isAuthenticated ? '/search' : '/login'} variant="whimsical" size="lg" icon={<Sparkles size={20} />}>
+                {isAuthenticated ? 'Explore Courses' : 'Get Started'}
               </Button>
             </div>
           </motion.div>
@@ -228,21 +248,21 @@ export default function HomePage() {
             <div className={styles.footerLinks}>
               <div className={styles.footerColumn}>
                 <h4>Explore</h4>
-                <Link to="/search">All Courses</Link>
-                <Link to="/search">Discover</Link>
-                <Link to="/instructors">Instructors</Link>
+                <span>Courses</span>
+                <span>Discover</span>
+                <span>Instructors</span>
               </div>
               <div className={styles.footerColumn}>
                 <h4>Company</h4>
-                <Link to="/about">About Us</Link>
-                <Link to="/contact">Contact</Link>
-                <Link to="/careers">Careers</Link>
+                <span>About Us</span>
+                <span>Contact</span>
+                <span>Careers</span>
               </div>
               <div className={styles.footerColumn}>
                 <h4>Support</h4>
-                <Link to="/help">Help Center</Link>
-                <Link to="/privacy">Privacy</Link>
-                <Link to="/terms">Terms</Link>
+                <span>Help Center</span>
+                <span>Privacy</span>
+                <span>Terms</span>
               </div>
             </div>
           </div>
@@ -252,6 +272,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-    </PageLayout>
+    </div>
   );
 }

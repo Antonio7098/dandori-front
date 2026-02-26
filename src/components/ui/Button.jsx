@@ -2,6 +2,15 @@ import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import styles from './Button.module.css';
 
+const getMotionComponent = (component) => {
+  if (component === 'button') return motion.button;
+  if (component === 'a') return motion.a;
+  if (typeof component === 'string') {
+    return motion(component);
+  }
+  return motion(component);
+};
+
 const Button = forwardRef(({
   children,
   variant = 'primary',
@@ -15,7 +24,7 @@ const Button = forwardRef(({
   as = 'button',
   ...props
 }, ref) => {
-  const Component = as === 'button' ? motion.button : motion.a;
+  const Component = getMotionComponent(as);
   
   const classes = [
     styles.button,

@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import Header from './Header';
 import Sidebar from './Sidebar';
 import ChatPanel from '../chat/ChatPanel';
 import { useUIStore } from '../../stores/useStore';
@@ -25,7 +24,6 @@ const pageVariants = {
 export default function PageLayout({ 
   children, 
   showSidebar = true,
-  showHeader = true,
   fullWidth = false,
   className = '',
 }) {
@@ -42,8 +40,6 @@ export default function PageLayout({
           transition: 'margin-left 0.3s ease',
         }}
       >
-        {showHeader && <Header />}
-        
         <motion.main
           className={`${styles.main} ${fullWidth ? styles.fullWidth : ''} ${className}`}
           variants={pageVariants}

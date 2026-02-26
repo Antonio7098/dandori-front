@@ -7,7 +7,8 @@ import {
   CourseDetailPage, 
   ProfilePage, 
   LoginPage,
-  SignupPage
+  SignupPage,
+  ChatPage,
 } from './pages';
 import './styles/theme.css';
 
@@ -26,12 +27,14 @@ function App() {
       <ThemeProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/home" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/courses" element={<Navigate to="/search" replace />} />
             <Route path="/courses/:id" element={<CourseDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/saved" element={<ProfilePage />} />
+            <Route path="/chat" element={<ChatPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
           </Routes>
