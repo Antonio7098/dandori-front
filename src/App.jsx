@@ -9,6 +9,7 @@ import {
   LoginPage,
   SignupPage,
   ChatPage,
+  VisualElementsPage,
 } from './pages';
 import './styles/theme.css';
 
@@ -35,6 +36,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/saved" element={<ProfilePage />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/visual-elements" element={<VisualElementsPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
           </Routes>
